@@ -5,7 +5,13 @@ import (
 	"myapi/internal/domain"
 )
 
-func CreateTransactionBuy(transaction domain.Transaction) domain.Transaction {
+type TransactionRepo struct{}
+
+func NewTransactionRepository() *TransactionRepo {
+	return &TransactionRepo{}
+}
+
+func (t *TransactionRepo) CreateTransactionBuy(transaction domain.Transaction) domain.Transaction {
 	err := database.DB.Create(&transaction).Error
 	if err != nil {
 		return domain.Transaction{}

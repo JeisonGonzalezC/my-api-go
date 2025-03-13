@@ -4,22 +4,20 @@ import (
 	"log"
 	"myapi/infrastructure/api"
 	"myapi/internal/domain"
-	"myapi/internal/repository"
 )
 
 type StockUseCase struct {
+	repo StockRepository
+	api  StockAPI
+}
+
+type StockResult struct {
 	Items    []domain.Stock
 	NextPage string
 }
 
-func createStockUseCase(stocks []domain.Stock) {
-	if len(stocks) == 0 {
-		return
-	}
-	err := repository.CreateStocksRepository(stocks)
-	if err != nil {
-		log.Printf("Error creating stocks: %v", err)
-	}
+func NewStockUseCase(repo StockRepository, api StockAPI) *StockUseCase {
+	return &StockUseCase{repo: repo, api: api}
 }
 
 func checkNewStocksToSave(existingStocks []domain.Stock, stocksFromApi api.StocksResponse) []domain.Stock {
@@ -50,10 +48,10 @@ func checkNewStocksToSave(existingStocks []domain.Stock, stocksFromApi api.Stock
 	return newStocks
 }
 
-func GetStocksUseCase(nextPage string) StockUseCase {
-	stocksFromApi, err := api.GetStocksFromAPI(nextPage)
+func (uc *StockUseCase) GetStocksUseCase(nextPage string) StockResult {
+	stocksFromApi, err := uc.api.GetStocksFromAPI(nextPage)
 	if err != nil {
-		return StockUseCase{}
+		return StockResult{}
 	}
 
 	tickers := []string{}
@@ -61,15 +59,18 @@ func GetStocksUseCase(nextPage string) StockUseCase {
 		tickers = append(tickers, item.Ticker)
 	}
 
-	var existingStocks []domain.Stock = repository.GetStocksRepository(tickers)
-	var newStocks []domain.Stock = checkNewStocksToSave(existingStocks, stocksFromApi)
+	existingStocks := uc.repo.GetStocks(tickers)
+	newStocks := checkNewStocksToSave(existingStocks, stocksFromApi)
 
-	createStockUseCase(newStocks)
+	err = uc.repo.CreateStocks(newStocks)
+	if err != nil {
+		log.Printf("Error creatin stocks: %v", err)
+	}
 
-	var newAndExistingStocks []domain.Stock = append(existingStocks, newStocks...)
+	newAndExistingStocks := append(existingStocks, newStocks...)
 	for i := range newAndExistingStocks {
 		newAndExistingStocks[i].EvaluateRecommendation()
 	}
 
-	return StockUseCase{Items: newAndExistingStocks, NextPage: stocksFromApi.NextPage}
+	return StockResult{Items: newAndExistingStocks, NextPage: stocksFromApi.NextPage}
 }

@@ -6,7 +6,15 @@ import (
 	"net/http"
 )
 
-func GetStocks(w http.ResponseWriter, r *http.Request) {
+type StockHandler struct {
+	useCase *usecase.StockUseCase
+}
+
+func NewStockHandler(useCase *usecase.StockUseCase) *StockHandler {
+	return &StockHandler{useCase: useCase}
+}
+
+func (h *StockHandler) GetStocks(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	allowedParams := map[string]bool{
@@ -15,13 +23,15 @@ func GetStocks(w http.ResponseWriter, r *http.Request) {
 
 	for key := range query {
 		if !allowedParams[key] {
-			http.Error(w, "Param not allowred: "+key, http.StatusBadRequest)
+			http.Error(w, "Param not allowed: "+key, http.StatusBadRequest)
 			return
 		}
 	}
 
-	var nextPage string = query.Get("nextPage")
+	nextPage := query.Get("nextPage")
 
-	stocksFromDb := usecase.GetStocksUseCase(nextPage)
+	stocksFromDb := h.useCase.GetStocksUseCase(nextPage)
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stocksFromDb)
 }

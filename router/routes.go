@@ -1,14 +1,20 @@
 package router
 
 import (
+	"myapi/internal/handler"
 	"net/http"
 )
 
-func SetupRoutes() *http.ServeMux {
+type Handlers struct {
+	StockHandler       *handler.StockHandler
+	TransactionHandler *handler.TransactionHandler
+}
+
+func SetupRoutes(handlers Handlers) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	SetupStocksRoutes(mux)
-	SetupTransactionRoutes(mux)
+	SetupStocksRoutes(mux, handlers.StockHandler)
+	SetupTransactionRoutes(mux, handlers.TransactionHandler)
 
 	return mux
 }

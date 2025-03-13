@@ -25,22 +25,32 @@ type StocksResponse struct {
 	NextPage string `json:"next_page"`
 }
 
-func GetStocksFromAPI(nextPage string) (StocksResponse, error) {
-	apiURL := os.Getenv("API_URL")
+// StockAPIClient is a client for stock API
+type StockAPIClient struct {
+	BaseURL string
+	Token   string
+}
 
-	url := apiURL
+// NewStockAPIClient is a constructor for StockAPIClient
+func NewStockAPIClient() *StockAPIClient {
+	return &StockAPIClient{
+		BaseURL: os.Getenv("API_URL"),
+		Token:   os.Getenv("API_TOKEN"),
+	}
+}
 
+func (c *StockAPIClient) GetStocksFromAPI(nextPage string) (StocksResponse, error) {
+	url := c.BaseURL
 	if nextPage != "" {
-		url = fmt.Sprintf("%s?next_page=%s", apiURL, nextPage)
+		url = fmt.Sprintf("%s?next_page=%s", c.BaseURL, nextPage)
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return StocksResponse{}, fmt.Errorf("error request api: %w", err)
+		return StocksResponse{}, fmt.Errorf("error request API: %w", err)
 	}
 
-	token := os.Getenv("API_TOKEN")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.Token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -50,12 +60,12 @@ func GetStocksFromAPI(nextPage string) (StocksResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return StocksResponse{}, fmt.Errorf("error api request data, code: %d", resp.StatusCode)
+		return StocksResponse{}, fmt.Errorf("error API request data, code: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return StocksResponse{}, fmt.Errorf("error readind response: %w", err)
+		return StocksResponse{}, fmt.Errorf("error reading response: %w", err)
 	}
 
 	var response StocksResponse
@@ -63,6 +73,5 @@ func GetStocksFromAPI(nextPage string) (StocksResponse, error) {
 		return StocksResponse{}, fmt.Errorf("error JSON parse: %w", err)
 	}
 
-	return response, err
-
+	return response, nil
 }

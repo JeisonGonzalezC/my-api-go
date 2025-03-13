@@ -7,7 +7,15 @@ import (
 	"net/http"
 )
 
-func CreateTransactionBuy(w http.ResponseWriter, r *http.Request) {
+type TransactionHandler struct {
+	useCase *usecase.TransactionUseCase
+}
+
+func NewTransactionHandler(useCase *usecase.TransactionUseCase) *TransactionHandler {
+	return &TransactionHandler{useCase: useCase}
+}
+
+func (t *TransactionHandler) CreateTransactionBuy(w http.ResponseWriter, r *http.Request) {
 	var newTransaction CreateTransactionRequest
 
 	decoder := json.NewDecoder(r.Body)
@@ -27,7 +35,7 @@ func CreateTransactionBuy(w http.ResponseWriter, r *http.Request) {
 		Ticker: newTransaction.Ticker,
 		Amount: newTransaction.Amount,
 	}
-	createdTransaction, err := usecase.CreateTransactionBuy(transaction)
+	createdTransaction, err := t.useCase.CreateTransactionBuy(transaction)
 
 	if err != nil {
 		http.Error(w, "Error creating transaction: "+err.Error(), http.StatusInternalServerError)
