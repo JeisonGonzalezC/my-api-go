@@ -10,32 +10,40 @@ import (
 	"myapi/router"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
-	// Cargar variables de entorno
+	// load .env file
 	errEnv := godotenv.Load()
 	if errEnv != nil {
 		log.Panic("Error loading .env file")
 	}
 
-	// Conectar a la base de datos
+	// connect to database
 	database.ConnectDB()
 
-	// Migrar la base de datos
+	// Migrate database
 	// database.Migrate(database.DB)
 
 	mux := router.SetupRoutes(bootstrap.InitApp())
 
-	// Definir puerto
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{os.Getenv("ORIGIN_FRONT_VUE")}, // My app frontend
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true, // allow cookies
+	})
+
+	// Get port from environment
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Iniciar servidor
+	// Start server
 	log.Println("Servidor corriendo en http://localhost:" + port)
-	err := http.ListenAndServe(":"+port, mux)
+	err := http.ListenAndServe(":"+port, c.Handler(mux))
 	if err != nil {
 		log.Println("Error al iniciar el servidor:", err)
 	}
