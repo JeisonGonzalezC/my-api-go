@@ -1,18 +1,24 @@
 package repository
 
 import (
-	"myapi/infrastructure/database"
 	"myapi/internal/domain"
+
+	"gorm.io/gorm"
 )
 
-type TransactionRepo struct{}
+type TransactionRepo struct {
+	db *gorm.DB
+}
 
-func NewTransactionRepository() *TransactionRepo {
-	return &TransactionRepo{}
+func NewTransactionRepository(db *gorm.DB) *TransactionRepo {
+	if db == nil {
+		panic("NewTransactionRepository: database instance is nil")
+	}
+	return &TransactionRepo{db: db}
 }
 
 func (t *TransactionRepo) CreateTransactionBuy(transaction domain.Transaction) domain.Transaction {
-	err := database.DB.Create(&transaction).Error
+	err := t.db.Create(&transaction).Error
 	if err != nil {
 		return domain.Transaction{}
 	}

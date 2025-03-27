@@ -32,6 +32,5 @@ func (h *StockHandler) GetStocks(w http.ResponseWriter, r *http.Request) {
 
 	stocksFromDb := h.useCase.GetStocksUseCase(nextPage)
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stocksFromDb)
 }

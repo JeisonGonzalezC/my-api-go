@@ -21,12 +21,12 @@ func main() {
 	}
 
 	// connect to database
-	database.ConnectDB()
+	db := database.ConnectDB()
 
 	// Migrate database
 	// database.Migrate(database.DB)
 
-	mux := router.SetupRoutes(bootstrap.InitApp())
+	mux := router.SetupRoutes(bootstrap.InitApp(db))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{os.Getenv("ORIGIN_FRONT_VUE")}, // My app frontend

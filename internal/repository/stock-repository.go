@@ -2,22 +2,28 @@ package repository
 
 import (
 	"fmt"
-	"myapi/infrastructure/database"
 	"myapi/internal/domain"
+
+	"gorm.io/gorm"
 )
 
 // StockRepo the implementation of StockRepository
-type StockRepo struct{}
+type StockRepo struct {
+	db *gorm.DB
+}
 
 // NewStockRepository return a new instance of StockRepo
-func NewStockRepository() *StockRepo {
-	return &StockRepo{}
+func NewStockRepository(db *gorm.DB) *StockRepo {
+	if db == nil {
+		panic("NewStockRepository: database instance is nil")
+	}
+	return &StockRepo{db: db}
 }
 
 func (r *StockRepo) GetStocks(tickers []string) []domain.Stock {
 	var stocks []domain.Stock
 
-	if err := database.DB.Preload("Transactions").Where("ticker IN ?", tickers).Find(&stocks).Error; err != nil {
+	if err := r.db.Preload("Transactions").Where("ticker IN ?", tickers).Find(&stocks).Error; err != nil {
 		return []domain.Stock{}
 	}
 
@@ -29,7 +35,7 @@ func (r *StockRepo) CreateStocks(stocks []domain.Stock) error {
 		return nil
 	}
 
-	if err := database.DB.Create(&stocks).Error; err != nil {
+	if err := r.db.Create(&stocks).Error; err != nil {
 		return fmt.Errorf("error creating stocks: %w", err)
 	}
 
